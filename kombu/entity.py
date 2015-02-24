@@ -7,7 +7,7 @@ Exchange and Queue declarations.
 """
 from __future__ import absolute_import
 
-from .abstract import MaybeChannelBound
+from .abstract import MaybeChannelBound, Object
 from .exceptions import ContentDisallowed
 from .serialization import prepare_accept_content
 
@@ -291,7 +291,7 @@ class Exchange(MaybeChannelBound):
         return not self.auto_delete
 
 
-class binding(object):
+class binding(Object):
     """Represents a queue or exchange binding.
 
     :keyword exchange: Exchange to bind to.
@@ -300,6 +300,13 @@ class binding(object):
     :keyword unbind_arguments: Arguments for unbind operation.
 
     """
+
+    attrs = (
+        ('exchange', None),
+        ('routing_key', None),
+        ('arguments', None),
+        ('unbind_arguments', None)
+    )
 
     def __init__(self, exchange=None, routing_key='',
                  arguments=None, unbind_arguments=None):
@@ -716,3 +723,13 @@ class Queue(MaybeChannelBound):
                      queue_arguments=q_arguments,
                      binding_arguments=b_arguments,
                      bindings=bindings)
+
+    def as_dict(self, recurse=False):
+        res = super(Queue, self).as_dict(recurse)
+        if not recurse:
+            return res
+        bindings = res.get('bindings')
+        if bindings:
+            res['bindings'] = [b.as_dict(recurse=True) for b in bindings]
+        return res
+
